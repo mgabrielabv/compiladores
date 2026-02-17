@@ -1,9 +1,0 @@
-digraph G {
-n2213549516160 [label="EXPR", shape=box, style=filled, fillcolor=lightgreen]
-n2213549516160 -> n2213549514720 [label="left"];
-n2213549514720 [label="b"]
-n2213549516160 -> n2213549516240 [label="op"];
-n2213549516240 [label="+"]
-n2213549516160 -> n2213549515360 [label="right"];
-n2213549515360 [label="2"]
-}

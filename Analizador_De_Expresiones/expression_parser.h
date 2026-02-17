@@ -1,8 +1,8 @@
 #ifndef EXPRESSION_PARSER_H
 #define EXPRESSION_PARSER_H
 
-#include "../../../analizadorLexico/lexer.h"
-#include "../../../Proyectos compiladores/LibreriaDeSoportes/arraylist.h"
+#include "lexer.h"
+#include "arraylist.h"  
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -54,7 +54,9 @@ private:
     map<string, double> variables;
 };
 
+// Funciones auxiliares
 ArrayList<Token> tokenizarExpresion(const string &expr);
 void imprimirArbol(ExprNode *nodo, string prefijo = "", bool esUltimo = true);
+void imprimirArbolComoImagen(ExprNode *nodo, string prefijo = "", bool esUltimo = true);  // <-- AÑADIR ESTA LÍNEA
 
 #endif

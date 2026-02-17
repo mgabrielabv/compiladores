@@ -1,19 +1,22 @@
 @echo off
-REM Compila el Analizador de Expresiones en Windows usando g++
+pushd "%~dp0"
+echo Compilando Analizador de Expresiones...
+echo Directorio del script: %~dp0
 
-setlocal
+REM Compilar incluyendo las rutas de los otros módulos
+g++ -std=c++11 -o analizador_expresiones.exe ^
+    main.cpp ^
+    expression_parser.cpp ^
+    ../analizadorlexico/lexer.cpp ^
+    -I. -I../analizadorlexico -I../LibreriaDeSoportes 
 
-
-set SRC=fuente\main.cpp fuente\expression_parser.cpp ..\LibreriaDeSoportes\arraylist.h "C:\Users\gaby's\OneDrive\Documents\Compiladores\analizadorLexico\lexer.cpp"
-set INC=-Iincluye -I..\LibreriaDeSoportes -I..\..\..\analizadorLexico
-set OUT=analizador_expresiones.exe
-
-g++ %INC% %SRC% -o %OUT% -std=c++17 -Wall
-
-if %ERRORLEVEL%==0 (
-    echo Compilacion exitosa: %OUT%
+if %errorlevel% equ 0 (
+    echo.
+    echo Compilacion exitosa!
+    echo Ejecuta: analizador_expresiones.exe
 ) else (
-    echo Error en la compilacion
+    echo.
+    echo Error en compilacion
 )
-endlocal
+popd
 pause
