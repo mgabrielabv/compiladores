@@ -12,27 +12,21 @@
 
 using namespace std;
 
-// Función para validar si la expresión tiene errores de sintaxis comunes
+// Funcion para validar si la expresion tiene errores de sintaxis comunes
 bool validarExpresion(const string &expr, string &errorMsg) {
-    // Verificar si hay números seguidos de paréntesis sin operador (ej: 2(x+8))
     for (size_t i = 0; i < expr.length() - 1; i++) {
         if (isdigit(expr[i]) && expr[i+1] == '(') {
             errorMsg = "Error de sintaxis: falta operador entre numero y parentesis";
             return false;
         }
-        if (isalpha(expr[i]) && expr[i+1] == '(') {
-            // Esto podría ser una función, pero por ahora lo tratamos como error
-            if (expr[i] != 'v' && expr[i] != 'x' && expr[i] != 'y') {
-                // Solo para este ejemplo, asumimos que v, x, y son variables
-            }
-        }
     }
+        
     return true;
 }
 
 int main() {
     #ifdef _WIN32
-    SetConsoleOutputCP(65001); // Para caracteres especiales en Windows
+    SetConsoleOutputCP(65001); 
     #endif
 
     cout << "=== ANALIZADOR DE EXPRESIONES ===\n";
@@ -40,6 +34,8 @@ int main() {
     cout << "  variable = expresion  - Asignacion\n";
     cout << "  expresion             - Evaluacion\n";
     cout << "  salir                 - Terminar\n\n";
+
+    ExpressionEvaluator evaluator; 
 
     while (true) {
         cout << "> ";
@@ -49,14 +45,14 @@ int main() {
         if (input.empty()) continue;
         if (input == "salir") break;
 
-        // Corregir automáticamente si falta el operador
+        // Arregla el caso donde hay dos parentesis juntos: )( -> )*(
         string exprCorregida = input;
         size_t pos;
         while ((pos = exprCorregida.find(")(")) != string::npos) {
             exprCorregida.replace(pos, 2, ")*(");
         }
         
-        // Corregir número seguido de paréntesis
+        // Agrega un multiplicador si hay un numero pegado a un parentesis
         for (int i = exprCorregida.length() - 1; i > 0; i--) {
             if (isdigit(exprCorregida[i]) && exprCorregida[i+1] == '(') {
                 exprCorregida.insert(i+1, "*");
@@ -64,28 +60,27 @@ int main() {
         }
 
         try {
-            cout << "\nExpresión original: " << input << endl;
+            cout << "\nExpresion original: " << input << endl;
             if (input != exprCorregida) {
-                cout << "Expresión corregida: " << exprCorregida << endl;
+                cout << "Expresion corregida: " << exprCorregida << endl;
             }
             
-            // Tokenizar la entrada
             ArrayList<Token> tokens = tokenizarExpresion(exprCorregida);
             
-            // Parsear
+            // Convertimos el texto en una estructura de arbol para entenderlo
             ExpressionParser parser(tokens);
             ExprNode *arbol = parser.parse();
 
-            // Mostrar árbol en formato jerárquico como en la imagen
-            cout << "\nÁrbol sintáctico:" << endl;
+            // Dibujamos el arbol para que el usuario vea como se interpreto
+            cout << "\nArbol sintactico:" << endl;
             imprimirArbolComoImagen(arbol, "", true);
 
-            // Evaluar
-            ExpressionEvaluator evaluator;
+            // Calculamos el resultado o hacemos la asignacion
+            // ExpressionEvaluator evaluator; // Moved to outer scope
             
             if (arbol->valor == "ASSIGN") {
                 evaluator.ejecutarAsignacion(arbol);
-                cout << "\nAsignación realizada\n";
+                cout << "\nAsignacion realizada\n";
                 evaluator.imprimirVariables();
             } else {
                 double resultado = evaluator.evaluar(arbol);

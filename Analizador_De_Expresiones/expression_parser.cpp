@@ -8,11 +8,11 @@
 
 using namespace std;
 
-// Constructor de ExprNode
+// Inicializa un nodo nuevo para construir el arbol de la expresion
 ExprNode::ExprNode(const string &val, TokenType t, bool isParen)
     : valor(val), type(t), esParentesis(isParen) {}
 
-// Constructor del parser
+// Prepara el analizador para leer la lista de tokens
 ExpressionParser::ExpressionParser(const ArrayList<Token> &tokens) : tokens(tokens), pos(0) {}
 
 bool ExpressionParser::isAtEnd() { 
@@ -68,7 +68,7 @@ ExprNode *ExpressionParser::parseAssignment() {
     ExprNode *left = parseComparison();
     
     if (!isAtEnd() && peek().value == "=") {
-        get(); // consumir '='
+        get(); // Saltamos el ' = ' porque ya sabemos que es una asignacion
         ExprNode *right = parseAssignment();
         
         if (!esVariableSimple(left)) {
@@ -149,7 +149,7 @@ ExprNode *ExpressionParser::parsePrimary() {
     throw runtime_error("Error: Token inesperado: " + t.value);
 }
 
-// --- EVALUADOR ---
+
 ExpressionEvaluator::ExpressionEvaluator() {}
 
 double ExpressionEvaluator::pedirValorVariable(const string &nombre) {
@@ -261,7 +261,7 @@ void ExpressionEvaluator::imprimirVariables() {
     cout << "--------------------------" << endl;
 }
 
-// --- FUNCIONES AUXILIARES ---
+// --- HERRAMIENTAS ADICIONALES ---
 
 ArrayList<Token> tokenizarExpresion(const string &expr) {
     Lexer lexer(expr);
@@ -276,15 +276,15 @@ ArrayList<Token> tokenizarExpresion(const string &expr) {
     return tokens;
 }
 
-// --- VISUALIZACIÓN DEL ÁRBOL (SIN VECTOR) ---
+// --- DIBUJAR EL ARBOL EN CONSOLA ---
 
 void imprimirArbol(ExprNode *nodo, string prefijo, bool esUltimo) {
     if (!nodo) return;
     
-    // Imprimir el nodo actual
+    // Muestra la informacion del nodo que estamos visitando ahora
     cout << prefijo << (esUltimo ? "└── " : "├── ");
     
-    // Mostrar según el tipo de nodo
+    // Decide que simbolo mostrar segun lo que sea el nodo (numero, suma, etc.)
     if (nodo->esParentesis) {
         cout << "( )";
     }
@@ -302,9 +302,9 @@ void imprimirArbol(ExprNode *nodo, string prefijo, bool esUltimo) {
         cout << nodo->valor;
     }
     
-    // Mostrar tipo si es necesario
+    // Verificamos si es solo un numero para mostrarlo limpio
     if (nodo->type == TokenType::Number && nodo->valor != "EXPR" && nodo->valor != "COMP" && nodo->valor != "ASSIGN" && !nodo->esParentesis) {
-        // Es número, no mostrar etiqueta extra
+        // Es un numero simple, asi que no hacemos nada especial aqui
     }
     else if (nodo->type == TokenType::Identifier && nodo->valor != "EXPR" && nodo->valor != "COMP" && nodo->valor != "ASSIGN" && !nodo->esParentesis) {
         cout << "";
@@ -312,39 +312,39 @@ void imprimirArbol(ExprNode *nodo, string prefijo, bool esUltimo) {
     
     cout << endl;
     
-    // Preparar prefijo para hijos
+    // Preparamos las lineas (ramas) para dibujar los nodos hijos mas abajo
     string nuevoPrefijo = prefijo + (esUltimo ? "    " : "│   ");
     
-    // Caso especial: nodo de paréntesis
+    // Si es un parentesis, nos metemos adentro para dibujar lo que contiene
     if (nodo->esParentesis && nodo->operador) {
         imprimirArbol(nodo->operador, nuevoPrefijo, true);
         return;
     }
     
-    // Para nodos de operación, imprimir izquierdo y derecho
+    // Si es una operacion, dibujamos los operandos de la izquierda y derecha
     if (nodo->izquierdo && nodo->derecho) {
-        // Tiene ambos hijos
+        // Tiene valores a ambos lados
         imprimirArbol(nodo->izquierdo, nuevoPrefijo, false);
         imprimirArbol(nodo->derecho, nuevoPrefijo, true);
     }
     else if (nodo->izquierdo) {
-        // Solo hijo izquierdo
+        // Solo tiene algo a la izquierda
         imprimirArbol(nodo->izquierdo, nuevoPrefijo, true);
     }
     else if (nodo->derecho) {
-        // Solo hijo derecho
+        // Solo tiene algo a la derecha
         imprimirArbol(nodo->derecho, nuevoPrefijo, true);
     }
 }
 
-// Versión que muestra el árbol como en la imagen
+// Dibuja el arbol de una forma grafica bonita para entender la estructura
 void imprimirArbolComoImagen(ExprNode *nodo, string prefijo, bool esUltimo) {
     if (!nodo) return;
     
-    // Imprimir el nodo actual
+    // Dibuja la rama y el nodo actual
     cout << prefijo << (esUltimo ? "└── " : "├── ");
     
-    // Mostrar el valor del nodo
+    // Muestra que hay en este nodo (un signo, un numero, etc.)
     if (nodo->esParentesis) {
         cout << "( )";
     }
@@ -364,16 +364,16 @@ void imprimirArbolComoImagen(ExprNode *nodo, string prefijo, bool esUltimo) {
     
     cout << endl;
     
-    // Preparar prefijo para hijos
+    // Preparamos las lineas para los hijos
     string nuevoPrefijo = prefijo + (esUltimo ? "    " : "│   ");
     
-    // Caso especial: nodo de paréntesis
+    // Si es un parentesis, mostramos lo de adentro
     if (nodo->esParentesis && nodo->operador) {
         imprimirArbolComoImagen(nodo->operador, nuevoPrefijo, true);
         return;
     }
     
-    // Para nodos de operación, imprimir izquierdo y derecho
+    // Si es una operacion, mostramos los dos lados
     if (nodo->izquierdo && nodo->derecho) {
         imprimirArbolComoImagen(nodo->izquierdo, nuevoPrefijo, false);
         imprimirArbolComoImagen(nodo->derecho, nuevoPrefijo, true);

@@ -54,9 +54,8 @@ private:
     map<string, double> variables;
 };
 
-// Funciones auxiliares
 ArrayList<Token> tokenizarExpresion(const string &expr);
 void imprimirArbol(ExprNode *nodo, string prefijo = "", bool esUltimo = true);
-void imprimirArbolComoImagen(ExprNode *nodo, string prefijo = "", bool esUltimo = true);  // <-- AÑADIR ESTA LÍNEA
+void imprimirArbolComoImagen(ExprNode *nodo, string prefijo = "", bool esUltimo = true);  
 
 #endif
