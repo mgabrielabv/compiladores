@@ -141,6 +141,10 @@ ExprNode *ExpressionParser::parsePrimary() {
     if (t.type == TokenType::Number) {
         return new ExprNode(t.value, t.type);
     }
+
+    if (t.type == TokenType::String) {
+        return new ExprNode(t.value, t.type);
+    }
     
     if (t.type == TokenType::Identifier) {
         return new ExprNode(t.value, t.type);
@@ -312,7 +316,7 @@ void imprimirArbol(ExprNode *nodo, string prefijo, bool esUltimo) {
     
     cout << endl;
     
-    // Preparamos las lineas (ramas) para dibujar los nodos hijos mas abajo
+    // Preparamos las ramas para dibujar los nodos hijos mas abajo
     string nuevoPrefijo = prefijo + (esUltimo ? "    " : "│   ");
     
     // Si es un parentesis, nos metemos adentro para dibujar lo que contiene

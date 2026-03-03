@@ -21,6 +21,27 @@ public:
     ~ArrayList();
     
 
+    ArrayList(const ArrayList<T>& other) : count(other.count), capacity(other.capacity), iterator(other.iterator) {
+        data = new T[capacity];
+        for(size_t i = 0; i < count; i++) {
+            data[i] = other.data[i];
+        }
+    }
+
+    ArrayList<T>& operator=(const ArrayList<T>& other) {
+        if (this != &other) {
+            delete[] data;
+            count = other.count;
+            capacity = other.capacity;
+            iterator = other.iterator;
+            data = new T[capacity];
+            for(size_t i = 0; i < count; i++) {
+                data[i] = other.data[i];
+            }
+        }
+        return *this;
+    }
+
     void add(const T& element);
     T& get(size_t index);
     const T& get(size_t index) const;

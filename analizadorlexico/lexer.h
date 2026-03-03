@@ -17,6 +17,7 @@ enum class TokenType // enum define los tipos de tokens que el lexer puede recon
     Comment,
     Unknown,
     Type,
+    Boolean,
     EndOfFile
 };
 

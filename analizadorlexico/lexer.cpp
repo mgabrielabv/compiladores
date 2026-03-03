@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iostream>
 #include <cctype>
+#include <sstream> // Agregado para stringstream
+
 using namespace std;
 //diccionario de palabras reservadas
 unordered_map<string, TokenType> Lexer::reservedWords;
@@ -9,25 +11,28 @@ unordered_map<string, TokenType> Lexer::reservedWords;
 void Lexer::loadReservedWords(const string &filename) {
     ifstream file(filename);
     if (!file) {
-        cout << "No se pudo abrir: " << filename << endl;
-        exit(1);
+        cout << "No se pudo abrir el archivo de tokens: " << filename << endl;
+        // No salimos con error critico, permitimos usar los defaults si falla.
+        return;
     }
+    
+    reservedWords.clear(); // Limpiamos para usar solo lo del archivo si existe
     
     string line;
     while (getline(file, line)) {
-        if (line.empty() || line[0] == '#') continue; // Ignorar lineas vacias o comentarios
+        if (line.empty() || line[0] == '#') continue; 
         
-        size_t espacio = line.find(' '); // busca la posicion del espacio
-        if (espacio != string::npos) {  // Si hay un espacio, separamos la palabra y su tipo
-            string word = line.substr(0, espacio);
-            string type = line.substr(espacio + 1);
+        stringstream ss(line);
+        string word, type;
+        ss >> word >> type;
             
-            if (type == "keyword") reservedWords[word] = TokenType::Keyword;
-            else if (type == "operator") reservedWords[word] = TokenType::Operator;
-            else if (type == "function") reservedWords[word] = TokenType::Function;
-            else if (type == "delimiter") reservedWords[word] = TokenType::Delimiter;
-            else reservedWords[word] = TokenType::Unknown;
-        }
+        if (type == "Keyword") reservedWords[word] = TokenType::Keyword;
+        else if (type == "Operator") reservedWords[word] = TokenType::Operator;
+        else if (type == "Function") reservedWords[word] = TokenType::Function;
+        else if (type == "Delimiter") reservedWords[word] = TokenType::Delimiter;
+        else if (type == "Boolean") reservedWords[word] = TokenType::Boolean;
+        else if (type == "Type") reservedWords[word] = TokenType::Type; 
+        else reservedWords[word] = TokenType::Unknown;
     }
 }
 
@@ -39,22 +44,40 @@ void Lexer::initReservedWords() { // Inicializa el diccionario de palabras reser
     reservedWords["begin"] = TokenType::Keyword;
     reservedWords["end"] = TokenType::Keyword;
     reservedWords["var"] = TokenType::Keyword;
-    reservedWords["integer"] = TokenType::Keyword;
-    reservedWords["string"] = TokenType::Keyword;
+    reservedWords["procedure"] = TokenType::Keyword;
+    reservedWords["function"] = TokenType::Keyword;
+    reservedWords["if"] = TokenType::Keyword;
+    reservedWords["then"] = TokenType::Keyword;
+    reservedWords["else"] = TokenType::Keyword;
+    reservedWords["while"] = TokenType::Keyword;
+    reservedWords["do"] = TokenType::Keyword;
     
-    // Funciones
-    reservedWords["writeln"] = TokenType::Function;
-    
-    // Delimitadores
-    string delimiters = ";.,:(){}'";
-    for (char c : delimiters) {
-        reservedWords[string(1, c)] = TokenType::Delimiter;
-    }
-    
+    // Tipos de datos
+    reservedWords["integer"] = TokenType::Type;
+    reservedWords["string"] = TokenType::Type;
+    reservedWords["boolean"] = TokenType::Type;
+    reservedWords["true"] = TokenType::Boolean;
+    reservedWords["false"] = TokenType::Boolean;
+
     // Operadores
-    string operators[] = {":=", "+", "-", "*", "/", "=", "<>", "<", ">", "<=", ">=", "(*", "*)"};
-    for (string op : operators) {
-        reservedWords[op] = TokenType::Operator;
+    reservedWords[":="] = TokenType::Operator;
+    reservedWords["="] = TokenType::Operator;
+    reservedWords["<>"] = TokenType::Operator;
+    reservedWords["<"] = TokenType::Operator;
+    reservedWords["<="] = TokenType::Operator;
+    reservedWords[">"] = TokenType::Operator;
+    reservedWords[">="] = TokenType::Operator;
+    reservedWords["+"] = TokenType::Operator;
+    reservedWords["-"] = TokenType::Operator;
+    reservedWords["*"] = TokenType::Operator;
+    reservedWords["/"] = TokenType::Operator;
+    reservedWords[".."] = TokenType::Operator;
+
+    // Delimitadores
+    string delimiters = ";,:.'()";
+    for (char c : delimiters) {
+        string s(1, c);
+        reservedWords[s] = TokenType::Delimiter;
     }
 }
 
@@ -103,26 +126,26 @@ Token Lexer::nextToken() {
     
     // 4. Ver el primer carácter
     char c = peek();
-  //comentarios
+    // 2. Comentarios
     if (c == '{') {
         // Comentario { ... }
         while (peek() != '}' && peek() != '\0') get();
         if (peek() == '}') get();
-        return nextToken(); // Ignorar y seguir
+        return nextToken();
     }
     
     if (c == '(' && peekNext() == '*') {
         // Comentario (* ... *)
-        get(); get(); // Consumir '(' y '*'
+        get(); get();
         while (!(peek() == '*' && peekNext() == ')') && peek() != '\0') {
             get();
         }
-        if (peek() == '*') { get(); get(); } // Consumir '*' y ')'
+        if (peek() == '*') { get(); get(); }
         return nextToken();
     }
-    //cadenas
+
+    // 3. Cadenas
     if (c == '\'') {
-        // Cadena con comillas simples: ''
         get(); // Consumir '
         string value;
         while (peek() != '\'' && peek() != '\0') {
@@ -131,17 +154,7 @@ Token Lexer::nextToken() {
         if (peek() == '\'') get(); // Consumir '
         return {TokenType::String, value, startLine, startColumn};
     }
-    
-    if (c == '"') {
-        // Cadena con comillas dobles: ""
-        string value;
-        value += get(); // "
-        while (peek() != '"' && peek() != '\0') {
-            value += get();
-        }
-        if (peek() == '"') value += get(); // "
-        return {TokenType::String, value, startLine, startColumn};
-    }
+
     //caso 3 numeros
     if (isdigit(c)) {
         string value;
