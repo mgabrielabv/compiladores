@@ -11,11 +11,6 @@
 using namespace std;
 
 Parser::Parser(const ArrayList<Token> &tokens) : tokens(tokens), pos(0) {
-    // Inicializar operadores estandar de Pascal para validaciones
-    operators.add(":="); operators.add("="); operators.add("<>");
-    operators.add("<"); operators.add("<="); operators.add(">");
-    operators.add(">="); operators.add("+"); operators.add("-");
-    operators.add("*"); operators.add("/"); operators.add("..");
 }
 
 Token Parser::peek() {
@@ -44,65 +39,11 @@ void Parser::parse() {
     }
 }
 
-void Parser::loadOperators(const string &filename) {
-    ifstream file(filename);
-    if (!file) {
-        cerr << "No se pudo abrir el archivo de tokens: " << filename << endl;
-        exit(1);
-    }
-
-    string line;
-    while (getline(file, line)) {
-        if (line.empty() || line[0] == '#') continue;
-        istringstream iss(line);
-        string word, type;
-        iss >> word >> type;
-        if (type == "Operator") operators.add(word);
-    }
-}
-
-//Logica compleja de validacion de condiciones
-int Parser::evaluateCondition(ArrayList<Token> &condToken) {
-    for (int i = 0; i < (int)condToken.size() - 1; i++) {
-        if (i % 2 != 0) {
-            // Adaptado para operadores de Pascal como := o <>
-            if ((condToken.get(i).value == ":" || condToken.get(i).value == "<" || condToken.get(i).value == ">" || condToken.get(i).value == "!") &&
-                condToken.get(i + 1).value == "=") {
-                condToken.get(i).value += condToken.get(i + 1).value;
-                condToken.remove(i + 1);
-            }
-            else if ((condToken.get(i).value == "&" && condToken.get(i + 1).value == "&") ||
-                     (condToken.get(i).value == "|" && condToken.get(i + 1).value == "|") ||
-                     (condToken.get(i).value == "." && condToken.get(i + 1).value == ".")) {
-                condToken.get(i).value += condToken.get(i + 1).value;
-                condToken.remove(i + 1);
-            }
-        }
-    }
-
-    bool failed = false;
-    bool failed2 = false;
-    for (int i = 0; i < (int)condToken.size(); i++) {
-        for (int j = 0; j < (int)operators.size(); j++) {
-            if (i % 2 == 0) {
-                failed = (condToken.get(i).value == operators.get(j));
-            } else {
-                failed2 = (condToken.get(i).value != operators.get(j));
-                if (!failed2) break;
-            }
-            if (failed) return -1;
-        }
-        if (failed2) return -1;
-    }
-    return 1;
-}
-
 void Parser::statement() {
     if (isAtEnd()) return;
 
     if (match(";")) return;
 
-    // Cabecera del PROGRAM (manejo opcional)
     if (match("program")) {
         Token progName = get();
         cout << "Cabecera del Programa: " << progName.value << endl;
@@ -110,7 +51,7 @@ void Parser::statement() {
         return;
     }
 
-    //  Var (Pascal: var nombre : tipo ;)
+
     if (match("var")) {
         cout << "Declaracion de variables (VAR)\n";
         while (!isAtEnd() && peek().value != "begin" && peek().value != "procedure" && peek().value != "function") {

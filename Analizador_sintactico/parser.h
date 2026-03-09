@@ -14,27 +14,24 @@ class Parser
 {
 public:
     Parser(const ArrayList<Token> &tokens);
-    
-    void parse(); 
-    void loadOperators(const string &filename);
+
+    void parse();
     bool hasSyntaxError = false;
 
 private:
     const ArrayList<Token> &tokens;
-    ArrayList<string> operators;
-    size_t pos = 0; 
+    size_t pos = 0;
 
-    Token peek();      
-    Token get();       
-    bool match(const string &expected); 
-    bool isAtEnd();    
+    Token peek();
+    Token get();
+    bool match(const string &expected);
+    bool isAtEnd();
 
     void statement();
     void parseBlock();
-    int evaluateCondition(ArrayList<Token> &condToken); 
     void parseBlockWithIndent(int indent);
-    void imprimirArbolConIndentacion(ExprNode *node, int indent);
-    ArrayList<Token> parseExpressionTokens(const string &delimiter);
+    void imprimirArbolConIndentacion(ExprNode* node, int indent);
+    ArrayList<Token> parseExpressionTokens(const string& delimiter);
 };
 
 #endif // PARSER_H

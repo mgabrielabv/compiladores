@@ -1,8 +1,8 @@
 #ifndef EXPRESSION_PARSER_H
 #define EXPRESSION_PARSER_H
 
-#include "lexer.h"
-#include "arraylist.h"  
+#include "../analizadorlexico/lexer.h"
+#include "../LibreriaDeSoportes/arraylist.h"  
 #include <string>
 #include <fstream>
 #include <iostream>

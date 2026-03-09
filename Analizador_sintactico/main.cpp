@@ -30,8 +30,8 @@ int main()
     cout << codigoFuente << endl;
     cout << "-------------------------------------\n";
 
-    // 1. Fase de Analisis Lexico
-    Lexer::initReservedWords(); // Inicializa las palabras reservadas definidas en el Lexer
+
+    Lexer::initReservedWords(); 
     Lexer lexer(codigoFuente);
     ArrayList<Token> tokens;
     Token token;
@@ -45,7 +45,7 @@ int main()
 
         cout << "Lexer: Generados " << tokens.size() << " tokens con exito.\n\n";
 
-        // 2. Fase de Analisis Sintactico 
+      
         Parser parser(tokens);
 
    
