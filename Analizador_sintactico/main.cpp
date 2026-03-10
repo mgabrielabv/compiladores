@@ -7,11 +7,26 @@
 
 using namespace std;
 
-string leerArchivo(const string &nombreArchivo)
-{
+string tokenTypeToString(TokenType type) {
+    switch (type) {
+    case TokenType::Keyword: return "Keyword";
+    case TokenType::Operator: return "Operator";
+    case TokenType::Function: return "Function";
+    case TokenType::Delimiter: return "Delimiter";
+    case TokenType::Identifier: return "Identifier";
+    case TokenType::Number: return "Number";
+    case TokenType::String: return "String";
+    case TokenType::Unknown: return "Unknown";
+    case TokenType::Type: return "Type";
+    case TokenType::Boolean: return "Boolean";
+    case TokenType::EndOfFile: return "EndOfFile";
+    default: return "Invalid";
+    }
+}
+
+string leerArchivo(const string &nombreArchivo) {
     ifstream archivo(nombreArchivo);
-    if (!archivo)
-    {
+    if (!archivo) {
         cerr << "Error: No se pudo abrir el archivo fuente: " << nombreArchivo << endl;
         exit(1);
     }
@@ -20,9 +35,10 @@ string leerArchivo(const string &nombreArchivo)
     return buffer.str();
 }
 
-int main()
-{
-    string nombreArchivo = "../analizadorlexico/code.pas"; 
+int main() {
+    Lexer::initReservedWords();
+
+    string nombreArchivo = "code.pas";
     string codigoFuente = leerArchivo(nombreArchivo);
 
     cout << "Analizando archivo : " << nombreArchivo << "\n";
@@ -30,25 +46,28 @@ int main()
     cout << codigoFuente << endl;
     cout << "-------------------------------------\n";
 
-
-    Lexer::initReservedWords(); 
     Lexer lexer(codigoFuente);
     ArrayList<Token> tokens;
     Token token;
 
     try {
-        do
-        {
+        do {
             token = lexer.nextToken();
             tokens.add(token);
         } while (token.type != TokenType::EndOfFile);
 
-        cout << "Lexer: Generados " << tokens.size() << " tokens con exito.\n\n";
+        cout << "Lexer: Generados " << tokens.size() << " tokens.\n\n";
+        
+        cout << "Lista de tokens:\n";
+        for (size_t i = 0; i < tokens.size(); i++) {
+            Token t = tokens.get(i);
+            cout << "  " << t.value << " [" << tokenTypeToString(t.type) 
+                 << "] en linea " << t.line << "\n";
+        }
+        cout << "\n";
 
-      
         Parser parser(tokens);
 
-   
         cout << "Iniciando el Analisis Sintactico...\n";
         cout << "-------------------------------------\n";
         parser.parse();
@@ -57,11 +76,11 @@ int main()
         if (parser.hasSyntaxError) {
             cout << "\nEl analisis finalizo con errores de sintaxis.\n";
         } else {
-            cout << "\nAnalisis completado exitosamente.\n";
+            cout << "\nAnalisis completado exitosamente. No se encontraron errores.\n";
         }
 
     } catch (const exception &e) {
-        cerr << "Error critico durante la ejecucion: " << e.what() << endl;
+        cerr << "Error critico: " << e.what() << endl;
         return 1;
     }
 

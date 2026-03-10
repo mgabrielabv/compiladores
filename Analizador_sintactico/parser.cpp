@@ -1,12 +1,7 @@
 #include "parser.h"
 #include "../analizadorlexico/lexer.h"
-#include "../Analizador_De_Expresiones/expression_parser.h" 
+#include "../Analizador_De_Expresiones/expression_parser.h"
 #include <iostream>
-#include <fstream>
-#include "parser.h"
-#include <filesystem>
-#include <sstream>
-#include <functional>
 
 using namespace std;
 
@@ -21,8 +16,16 @@ Token Parser::get() {
     return isAtEnd() ? Token{TokenType::EndOfFile, "", 0, 0} : tokens.get(pos++);
 }
 
-bool Parser::match(const string &expected) {
-    if (!isAtEnd() && peek().value == expected) {
+bool Parser::match(TokenType type) {
+    if (!isAtEnd() && peek().type == type) {
+        ++pos;
+        return true;
+    }
+    return false;
+}
+
+bool Parser::match(const string &value) {
+    if (!isAtEnd() && peek().value == value) {
         ++pos;
         return true;
     }
@@ -33,166 +36,414 @@ bool Parser::isAtEnd() {
     return pos >= tokens.size();
 }
 
+void Parser::setContext(const string& context) {
+    currentContext = context;
+}
+
+void Parser::error(const string& message) {
+    hasSyntaxError = true;
+    Token current = peek();
+    SyntaxError err;
+    err.message = message;
+    err.line = current.line;
+    err.column = current.column;
+    err.token = current.value;
+    err.context = currentContext;
+    errors.add(err);
+    
+    cerr << "Error sintactico en linea " << current.line 
+         << ", columna " << current.column << ": " << message << endl;
+    if (!currentContext.empty()) {
+        cerr << "  Contexto: " << currentContext << endl;
+    }
+}
+
+void Parser::recoverTo(const string& delimiter) {
+    while (!isAtEnd() && peek().value != delimiter && 
+           peek().value != ";" && peek().value != "end") {
+        get();
+    }
+}
+
+Token Parser::expectIdentifier() {
+    setContext("esperando identificador");
+    
+    if (isAtEnd()) {
+        error("Se esperaba un identificador pero se encontro fin de archivo");
+        return Token{TokenType::Unknown, "", 0, 0};
+    }
+    
+    if (peek().type == TokenType::Unknown) {
+        Token t = get();
+        error("Token desconocido: '" + t.value + "' no es un identificador valido");
+        return t;
+    }
+    
+    if (peek().type != TokenType::Identifier) {
+        error("Se esperaba un identificador pero se encontro '" + peek().value + "'");
+        return get();
+    }
+    
+    return get();
+}
+
+void Parser::expect(const string &value) {
+    setContext("esperando '" + value + "'");
+    
+    if (isAtEnd()) {
+        error("Se esperaba '" + value + "' pero se encontro fin de archivo");
+        return;
+    }
+    
+    if (peek().type == TokenType::Unknown) {
+        Token t = get();
+        error("Token desconocido: '" + t.value + "' se esperaba '" + value + "'");
+        return;
+    }
+    
+    if (peek().value != value) {
+        error("Se esperaba '" + value + "' pero se encontro '" + peek().value + "'");
+    } else {
+        get();
+    }
+}
+
+void Parser::expectSemicolon() {
+    expect(";");
+}
+
+void Parser::expectEnd() {
+    setContext("cerrando bloque");
+    
+    if (isAtEnd()) {
+        error("Se esperaba 'end' para cerrar el bloque pero se encontro fin de archivo");
+        return;
+    }
+    
+    if (peek().type == TokenType::Unknown) {
+        Token t = get();
+        error("Token desconocido: '" + t.value + "' se esperaba 'end'");
+        
+        while (!isAtEnd() && peek().value != "end") {
+            if (peek().type == TokenType::Unknown) {
+                get();
+            } else {
+                break;
+            }
+        }
+    }
+    
+    if (peek().value != "end") {
+        error("Se esperaba 'end' para cerrar el bloque pero se encontro '" + peek().value + "'");
+        
+        if (peek().value == "*" && pos + 1 < tokens.size() && tokens.get(pos + 1).value == ")") {
+            error("Comentario mal formado: encontrado '*)' sin el correspondiente '(*'");
+            get();
+            get();
+        }
+        
+        while (!isAtEnd() && peek().value != "end") {
+            get();
+        }
+    }
+    
+    if (peek().value == "end") {
+        get();
+    }
+}
+
 void Parser::parse() {
+    cout << "Iniciando analisis sintactico...\n";
+    
+    try {
+        program();
+    } catch (const exception &e) {
+        error(string("Error fatal: ") + e.what());
+    }
+    
+    if (!isAtEnd() && peek().type != TokenType::EndOfFile) {
+        setContext("final del analisis");
+        error("Tokens no procesados al final del archivo");
+    }
+    
+    if (hasSyntaxError) {
+        cout << "\n=========================================\n";
+        cout << "Se encontraron " << errors.size() << " errores sintacticos:\n";
+        cout << "=========================================\n";
+        
+        for (size_t i = 0; i < errors.size(); i++) {
+            SyntaxError err = errors.get(i);
+            cout << "Error " << (i+1) << ":\n";
+            cout << "  Linea: " << err.line << ", Columna: " << err.column << "\n";
+            cout << "  Token: '" << err.token << "'\n";
+            cout << "  Mensaje: " << err.message << "\n";
+            if (!err.context.empty()) {
+                cout << "  Contexto: " << err.context << "\n";
+            }
+            cout << "\n";
+        }
+    } else {
+        cout << "\nAnalisis sintactico completado: SIN ERRORES\n";
+    }
+}
+
+void Parser::program() {
+    setContext("cabecera del programa");
+    
+    if (peek().type == TokenType::Unknown) {
+        Token t = get();
+        error("Token desconocido al inicio del programa: '" + t.value + "'");
+    }
+    
+    if (peek().value == "program") {
+        get();
+        Token progName = expectIdentifier();
+        cout << "Programa: " << progName.value << endl;
+        expectSemicolon();
+    } else {
+        error("Se esperaba 'program' al inicio del programa");
+    }
+    
+    block();
+    
+    setContext("final del programa");
+    if (peek().value == ".") {
+        get();
+    } else {
+        error("Se esperaba '.' al final del programa");
+    }
+}
+
+void Parser::block() {
+    declarations();
+    
+    setContext("cuerpo principal");
+    
+    if (peek().type == TokenType::Unknown) {
+        Token t = get();
+        error("Token desconocido antes de 'begin': '" + t.value + "'");
+    }
+    
+    if (peek().value == "begin") {
+        get();
+        cout << "Inicio de bloque BEGIN\n";
+        
+        while (!isAtEnd() && peek().value != "end") {
+            if (peek().type == TokenType::Unknown) {
+                Token t = get();
+                error("Token desconocido dentro del bloque: '" + t.value + "'");
+                continue;
+            }
+            statement();
+        }
+        
+        if (peek().value == "end") {
+            get();
+        } else {
+            expectEnd();
+        }
+    } else {
+        error("Se esperaba 'begin' para iniciar el bloque principal");
+    }
+}
+
+void Parser::declarations() {
+    setContext("declaraciones");
+    
     while (!isAtEnd()) {
-        statement();
+        if (peek().type == TokenType::Unknown) {
+            Token t = get();
+            error("Token desconocido en declaraciones: '" + t.value + "'");
+            continue;
+        }
+        
+        if (peek().value == "var") {
+            get();
+            cout << "Seccion VAR:\n";
+            
+            while (!isAtEnd() && peek().value != "begin" && 
+                   peek().value != "procedure" && peek().value != "function") {
+                
+                ArrayList<string> identifiers;
+                
+                do {
+                    if (peek().type == TokenType::Unknown) {
+                        Token t = get();
+                        error("Token desconocido: '" + t.value + "' no es un identificador valido");
+                        break;
+                    }
+                    
+                    if (peek().type != TokenType::Identifier) {
+                        Token t = get();
+                        error("Se esperaba un identificador pero se encontro '" + t.value + "'");
+                        break;
+                    }
+                    
+                    Token id = get();
+                    identifiers.add(id.value);
+                    
+                    if (peek().value == ",") {
+                        get();
+                    } else {
+                        break;
+                    }
+                } while (!isAtEnd());
+                
+                if (identifiers.size() == 0) {
+                    while (!isAtEnd() && peek().value != ";" && peek().value != "begin") {
+                        get();
+                    }
+                    if (peek().value == ";") get();
+                    continue;
+                }
+                
+                expect(":");
+                
+                if (!isAtEnd()) {
+                    Token tipo = peek();
+                    
+                    if (tipo.type == TokenType::Unknown) {
+                        error("Tipo de dato no valido: '" + tipo.value + "'");
+                        get();
+                    } else if (tipo.type != TokenType::Type) {
+                        error("Se esperaba un tipo de dato pero se encontro '" + tipo.value + "'");
+                        get();
+                    } else {
+                        get();
+                        cout << "  ";
+                        for (size_t i = 0; i < identifiers.size(); i++) {
+                            if (i > 0) cout << ", ";
+                            cout << identifiers.get(i);
+                        }
+                        cout << " : " << tipo.value << endl;
+                    }
+                }
+                
+                expectSemicolon();
+            }
+            
+        } else if (peek().value == "procedure" || peek().value == "function") {
+            string tipo = peek().value;
+            get();
+            Token nombre = expectIdentifier();
+            cout << "Declaracion de " << tipo << ": " << nombre.value << endl;
+            
+            if (peek().value == "(") {
+                get();
+                while (!isAtEnd() && peek().value != ")") {
+                    if (peek().type == TokenType::Unknown) {
+                        get();
+                    } else {
+                        get();
+                    }
+                }
+                if (peek().value == ")") get();
+            }
+            
+            expectSemicolon();
+            block();
+            expectSemicolon();
+            
+        } else {
+            break;
+        }
     }
 }
 
 void Parser::statement() {
+    setContext("sentencia");
+    
     if (isAtEnd()) return;
-
-    if (match(";")) return;
-
-    if (match("program")) {
-        Token progName = get();
-        cout << "Cabecera del Programa: " << progName.value << endl;
-        match(";");
-        return;
-    }
-
-
-    if (match("var")) {
-        cout << "Declaracion de variables (VAR)\n";
-        while (!isAtEnd() && peek().value != "begin" && peek().value != "procedure" && peek().value != "function") {
-            if (isAtEnd()) break;
-            Token ident = get(); 
-            if (match(":")) {
-                Token tipo = get();
-                cout << "  Variable: " << ident.value << " : " << tipo.value << "\n";
-            }
-            match(";");
-        }
-        return;
-    }
-
-    if (match("procedure") || match("function")) {
-        Token nombre = get();
-        cout << "Declaracion de subprograma: " << nombre.value << "\n";
-        if (match("(")) {
-            while (!isAtEnd() && !match(")")) { get(); }
-        }
-        if (match(";")) {
-             statement(); 
-        }
-        return;
-    }
-
-    // begin/end
-    if (match("begin")) {
-        cout << "Inicio de bloque (BEGIN)\n";
-        parseBlock();
-        return;
-    }
-
-    // if/then/else
-    if (match("if")) {
-        cout << "Estructura IF" << endl;
-        
-        ArrayList<Token> condTokens;
-        while (!isAtEnd() && peek().value != "then") {
-             condTokens.add(get());
-        }
-        match("then");
-        
-        cout << "  Condicion:" << endl;
-        ExpressionParser exprParser(condTokens);
-        try {
-            ExprNode* exprTree = exprParser.parse();
-            imprimirArbolConIndentacion(exprTree, 1);
-        } catch(...) { cout << "Error en condicion if" << endl; }
-
-        statement(); // Sentencia dentro del if
-        
-        if (match("else")) {
-             cout << "Estructura ELSE" << endl;
-             statement();
-        }
-        return;
-    }
     
-    // while/do
-    if (match("while")) {
-         cout << "Estructura WHILE" << endl;
-         ArrayList<Token> condTokens;
-         while (!isAtEnd() && peek().value != "do") {
-             condTokens.add(get());
-         }
-         match("do");
-         
-         ExpressionParser exprParser(condTokens);
-         //imprimirArbolConIndentacion(exprParser.parse(), 1);
-         
-         statement();
-         return;
-    }
-
-    // Asignaciones o Llamadas a procedimiento
-    if (peek().type == TokenType::Identifier) {
-        Token ident = get();
-        if (match(":=")) {
-            cout << "Asignacion variable: " << ident.value << "\n";
-            // Leer hasta ;
-            ArrayList<Token> exprTokens = parseExpressionTokens(";");
-            
-            ExpressionParser exprParser(exprTokens);
-            try {
-                ExprNode* exprTree = exprParser.parse();
-                imprimirArbolConIndentacion(exprTree, 4);
-            } catch (const exception& e) {
-                cout << "Error en asignacion: " << e.what() << endl;
-            }
-            return;
-        } else if (match("(")) { 
-            // Llamada a procedimiento como writeln(...)
-            cout << "Llamada a procedimiento: " << ident.value << "\n";
-             // consumir hasta )
-             while(!isAtEnd() && peek().value != ")") get();
-             match(")");
-             match(";");
-             return;
-        }
-    }
-    
-    // Consumo por defecto para evitar bucles infinitos si la estructura es desconocida
-    if (!isAtEnd()) {
+    if (peek().type == TokenType::Unknown) {
         Token t = get();
-        cout << "Token ignorado o desconocido: " << t.value << endl;
+        error("Token desconocido: '" + t.value + "' no es una sentencia valida");
+        recoverTo(";");
+        return;
     }
+    
+    if (peek().value == ";") {
+        get();
+        return;
+    }
+    
+    if (peek().value == "begin") {
+        get();
+        while (!isAtEnd() && peek().value != "end") {
+            if (peek().type == TokenType::Unknown) {
+                Token t = get();
+                error("Token desconocido dentro de bloque: '" + t.value + "'");
+                continue;
+            }
+            statement();
+        }
+        expect("end");
+        if (peek().value == ";") get();
+        return;
+    }
+    
+    if (peek().type == TokenType::Identifier) {
+        assignmentOrCall();
+        return;
+    }
+    
+    Token t = get();
+    error("Sentencia no valida: '" + t.value + "'");
+    recoverTo(";");
 }
 
-void Parser::parseBlock() {
-    // Contenido del bloque hasta 'end'
-    while (!isAtEnd() && peek().value != "end") {
-        statement();
-    }
-    match("end");
-    if (peek().value == "." || peek().value == ";") get(); 
-}
-
-void Parser::imprimirArbolConIndentacion(ExprNode *node, int indent) {
-    if (!node) return;
-    string indentStr(indent, ' ');
-    if (node->operador) {
-        imprimirArbolConIndentacion(node->izquierdo, indent + 2);
-        cout << indentStr << node->operador->valor << "\n";
-        imprimirArbolConIndentacion(node->derecho, indent + 2);
+void Parser::assignmentOrCall() {
+    Token ident = get();
+    
+    if (peek().value == ":=") {
+        get();
+        cout << "Asignacion a: " << ident.value << endl;
+        
+        ArrayList<Token> expression;
+        while (!isAtEnd() && peek().value != ";") {
+            if (peek().type == TokenType::Unknown) {
+                Token t = get();
+                error("Token desconocido en expresion: '" + t.value + "'");
+            } else {
+                expression.add(get());
+            }
+        }
+        
+        if (expression.size() > 0) {
+            try {
+                ExpressionParser exprParser(expression);
+                ExprNode* exprTree = exprParser.parse();
+            } catch (...) {
+                error("Error en la expresion de asignacion");
+            }
+        }
+        
+        expectSemicolon();
+        
+    } else if (peek().value == "(") {
+        get();
+        cout << "Llamada a: " << ident.value << endl;
+        
+        while (!isAtEnd() && peek().value != ")") {
+            if (peek().type == TokenType::Unknown) {
+                Token t = get();
+                error("Token desconocido en parametros: '" + t.value + "'");
+            } else {
+                get();
+            }
+            if (peek().value == ",") get();
+        }
+        
+        if (peek().value == ")") {
+            get();
+        } else {
+            error("Se esperaba ')' en llamada a procedimiento");
+        }
+        
+        expectSemicolon();
+        
     } else {
-        cout << indentStr << node->valor << "\n";
+        error("Identificador '" + ident.value + "' no esperado en este contexto");
+        recoverTo(";");
     }
-}
-
-ArrayList<Token> Parser::parseExpressionTokens(const string &delimiter) {
-    ArrayList<Token> expr;
-    while (!isAtEnd() && peek().value != delimiter) {
-        expr.add(get());
-    }
-    if (peek().value == delimiter) {
-        match(delimiter);
-    }
-    return expr;
-}
-
-void Parser::parseBlockWithIndent(int indent) {
-    parseBlock();
 }
