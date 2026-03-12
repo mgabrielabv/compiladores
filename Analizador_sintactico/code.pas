@@ -1,30 +1,27 @@
-program MalPrograma
+program MiPrograma;
 var
-   numero : integer
-   nombre : strng
-   edad   : ineger
+   numero, edad, x, y : integer;
+   nombre            : string;
 begin
-   numero := 10
-   nombre := 'Juan
-   writeln('Hola mundo')
-   
+   numero := 10;
+   nombre := 'Juan';
+   edad := 20;         
+
+   writeln('Hola mundo');
+
    if edad > 18 then
-      writeln('Mayor')
-   else
-      writeln('Menor')
-   
-   while numero < 5 do
-      numero := numero + 1
-      writeln(numero)
-   
-   procedimientoNoDeclarado()
-   
-   (* Este comentario no se cierra
-   
    begin
-      x := 10
-      y := 20
-   
-   { otro comentario no cerrado
-   
-   finalSinPunto 
+      writeln('Mayor');
+   end
+   else
+   begin
+      writeln('Menor');
+      while numero < 5 do
+      begin
+         numero := numero + 1;
+         writeln(numero);
+         x := 10;
+         y := 20;
+      end;
+   end;
+end.  

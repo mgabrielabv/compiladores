@@ -52,21 +52,21 @@ int main() {
 
     try {
         do {
-            token = lexer.nextToken();
+            token = lexer.nextToken(); // Genera tokens hasta el final del archivo
             tokens.add(token);
         } while (token.type != TokenType::EndOfFile);
 
         cout << "Lexer: Generados " << tokens.size() << " tokens.\n\n";
         
         cout << "Lista de tokens:\n";
-        for (size_t i = 0; i < tokens.size(); i++) {
+        for (size_t i = 0; i < tokens.size(); i++) { // Muestra cada token con su tipo y posicion
             Token t = tokens.get(i);
             cout << "  " << t.value << " [" << tokenTypeToString(t.type) 
                  << "] en linea " << t.line << "\n";
         }
         cout << "\n";
 
-        Parser parser(tokens);
+        Parser parser(tokens); // Crea el parser con la lista de tokens generada por el lexer
 
         cout << "Iniciando el Analisis Sintactico...\n";
         cout << "-------------------------------------\n";
