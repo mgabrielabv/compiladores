@@ -52,7 +52,7 @@ void Parser::error(const string& message) {
     errors.add(err);
     
     cerr << "Error sintactico en linea " << current.line 
-         << ", columna " << current.column << ": " << message << endl;
+         << ", columna " << curren3t.column << ": " << message << endl;
     if (!currentContext.empty()) {
         cerr << "  Contexto: " << currentContext << endl;
     }
