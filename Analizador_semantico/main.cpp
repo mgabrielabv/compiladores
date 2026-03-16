@@ -36,34 +36,34 @@ int main()
         tokens.add(token);
     } while (token.type != TokenType::EndOfFile);
 
-    // Analizar sintácticamente antes del semántico
+    // Analizar sintacticamente antes del semantico
     Parser parser(tokens);
     parser.parse();
 
     if (parser.hasSyntaxError)
     {
-        cout << "No se ejecuta el analizador semántico porque hay errores sintácticos.\n";
+        cout << "No se ejecuta el analizador semantico porque hay errores sintacticos.\n";
         return 1;
     }
 
-    // Analizar semánticamente
+    // Analizar semanticamente
     SemanticAnalyzer analyzer(tokens);
     analyzer.analyze();
 
-    // Mostrar solo los errores semánticos
+    // Mostrar solo los errores semanticos
     if (!analyzer.isSemanticallyCorrect())
     {
-        cout << "Errores semánticos encontrados:\n";
+        cout << "Errores semanticos encontrados:\n";
         for (size_t i = 0; i < analyzer.getErrors().size(); ++i)
         {
             const auto &error = analyzer.getErrors().get(i);
-            cout << "Línea " << error.line << ", Columna " << error.column
+            cout << "Linea " << error.line << ", Columna " << error.column
                  << ": " << error.message << "\n";
         }
     }
     else
     {
-        cout << "El código es semánticamente correcto.\n";
+        cout << "El codigo es semanticamente correcto.\n";
     }
 
     return 0;

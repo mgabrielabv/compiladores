@@ -1,14 +1,26 @@
-program PruebaSemantico;
+program ProgramaValido;
 var
-   entero : integer;
-   texto  : string;
+   contador, limite, total : integer;
+   nombre : string;
 begin
-   entero := 10;
-   texto := 'hola';
+   contador := 0;
+   limite := 5;
+   total := 0;
+   nombre := 'Gaby';
 
-   entero := texto;
-   entero := 10 / 0;
-   entero := 5.7;
-   entero := texto + 1;
-   entero := noDeclarada + 2;
+   while contador < limite do
+   begin
+      total := total + contador;
+      contador := contador + 1;
+   end;
+
+   if total > 0 then
+   begin
+      writeln(nombre);
+      writeln(total);
+   end
+   else
+   begin
+      writeln('Sin datos');
+   end;
 end.
