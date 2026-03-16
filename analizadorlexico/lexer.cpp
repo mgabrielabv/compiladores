@@ -51,6 +51,8 @@ void Lexer::initReservedWords() { // Inicializa el diccionario de palabras reser
     reservedWords["else"] = TokenType::Keyword;
     reservedWords["while"] = TokenType::Keyword;
     reservedWords["do"] = TokenType::Keyword;
+    reservedWords["writeln"] = TokenType::Keyword;
+    reservedWords["readln"] = TokenType::Keyword;
     
     // Tipos de datos
     reservedWords["integer"] = TokenType::Type;

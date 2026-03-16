@@ -43,14 +43,18 @@ public:
     }
 
     void add(const T& element);
+    void push_back(const T& element);
     T& get(size_t index);
     const T& get(size_t index) const;
+    T& operator[](size_t index);
+    const T& operator[](size_t index) const;
     void remove(size_t index);
     T* next();
     T* prev();
     T& last();
     T& first();
     size_t size() const;
+    bool empty() const;
     void reset_iterator();
 };
 
@@ -88,6 +92,11 @@ void ArrayList<T>::add(const T& element) {
     count++;
 }
 
+template<typename T>
+void ArrayList<T>::push_back(const T& element) {
+    add(element);
+}
+
 
 template<typename T>
 T& ArrayList<T>::get(size_t index) {
@@ -103,6 +112,16 @@ const T& ArrayList<T>::get(size_t index) const {
         throw std::out_of_range("Indice fuera de rango");
     }
     return data[index];
+}
+
+template<typename T>
+T& ArrayList<T>::operator[](size_t index) {
+    return get(index);
+}
+
+template<typename T>
+const T& ArrayList<T>::operator[](size_t index) const {
+    return get(index);
 }
 
 template<typename T>
@@ -157,6 +176,11 @@ T& ArrayList<T>::first() {
 template<typename T>
 size_t ArrayList<T>::size() const {
     return count;
+}
+
+template<typename T>
+bool ArrayList<T>::empty() const {
+    return count == 0;
 }
 
 template<typename T>

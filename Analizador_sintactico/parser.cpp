@@ -8,15 +8,15 @@ using namespace std;
 Parser::Parser(const ArrayList<Token> &tokens) : tokens(tokens), pos(0) {
 }
 
-Token Parser::peek() {
+Token Parser::peek() { // mira el token actual sin avanzar
     return isAtEnd() ? Token{TokenType::EndOfFile, "", 0, 0} : tokens.get(pos);
 }
 
-Token Parser::get() {
+Token Parser::get() { // devuelve el token actual y avanza al siguiente
     return isAtEnd() ? Token{TokenType::EndOfFile, "", 0, 0} : tokens.get(pos++);
 }
 
-bool Parser::match(TokenType type) {
+bool Parser::match(TokenType type) { // si es del tipo esperado, avanza
     if (!isAtEnd() && peek().type == type) {
         ++pos;
         return true;
@@ -40,7 +40,7 @@ void Parser::setContext(const string& context) {
     currentContext = context;
 }
 
-void Parser::error(const string& message) {
+void Parser::error(const string& message) { // Cuando se encuentra un error, marca, guarda y dice el tipo de error
     hasSyntaxError = true;
     Token current = peek();
     SyntaxError err;
@@ -51,21 +51,21 @@ void Parser::error(const string& message) {
     err.context = currentContext;
     errors.add(err);
     
-    cerr << "Error sintactico en linea " << current.line 
-         << ", columna " << curren3t.column << ": " << message << endl;
+        cerr << "Error sintactico en linea " << current.line 
+            << ", columna " << current.column << ": " << message << endl;
     if (!currentContext.empty()) {
         cerr << "  Contexto: " << currentContext << endl;
     }
 }
 
-void Parser::recoverTo(const string& delimiter) {
+void Parser::recoverTo(const string& delimiter) { //salta tokens hasta ver un ; o un end
     while (!isAtEnd() && peek().value != delimiter && 
            peek().value != ";" && peek().value != "end") {
         get();
     }
 }
 
-Token Parser::expectIdentifier() {
+Token Parser::expectIdentifier() { // a que sea nombre de variable o funcion, sino da error y sigue buscando un token valido
     setContext("esperando identificador");
     
     if (isAtEnd()) {
@@ -86,8 +86,8 @@ Token Parser::expectIdentifier() {
     
     return get();
 }
-
-void Parser::expect(const string &value) {
+ 
+void Parser::expect(const string &value) { // a que sea el token esperado, sino da error y sigue buscando un token valido
     setContext("esperando '" + value + "'");
     
     if (isAtEnd()) {
@@ -187,7 +187,7 @@ void Parser::parse() {
     }
 }
 
-void Parser::program() {
+void Parser::program() { // el programa debe empezar con program seguido de un identificador y un ; luego el bloque principal y terminar con .
     setContext("cabecera del programa");
     
     if (peek().type == TokenType::Unknown) {
@@ -214,7 +214,7 @@ void Parser::program() {
     }
 }
 
-void Parser::block() {
+void Parser::block() { // un bloque puede contener declaraciones de variables, procedimientos o funciones, seguido de un bloque principal entre begin end
     declarations();
     
     setContext("cuerpo principal");
@@ -247,7 +247,7 @@ void Parser::block() {
     }
 }
 
-void Parser::declarations() {
+void Parser::declarations() { // se analizan las variables declaradas, procedimientos o funciones
     setContext("declaraciones");
     
     while (!isAtEnd()) {
@@ -267,30 +267,30 @@ void Parser::declarations() {
                 ArrayList<string> identifiers;
                 
                 do {
-                    if (peek().type == TokenType::Unknown) {
+                    if (peek().type == TokenType::Unknown) { // si no es un token valido, da error y sigue buscando un token valido
                         Token t = get();
                         error("Token desconocido: '" + t.value + "' no es un identificador valido");
                         break;
                     }
                     
-                    if (peek().type != TokenType::Identifier) {
+                    if (peek().type != TokenType::Identifier) { // si no es un identificador, da error y sigue buscando un token valido
                         Token t = get();
                         error("Se esperaba un identificador pero se encontro '" + t.value + "'");
                         break;
                     }
                     
-                    Token id = get();
+                    Token id = get(); // si es un identificador valido, lo guarda
                     identifiers.add(id.value);
                     
-                    if (peek().value == ",") {
+                    if (peek().value == ",") { // si hay una coma, sigue buscando mas identificadores
                         get();
                     } else {
                         break;
                     }
-                } while (!isAtEnd());
+                } while (!isAtEnd()); // si no es el final del bloque, sigue buscando mas identificadores
                 
-                if (identifiers.size() == 0) {
-                    while (!isAtEnd() && peek().value != ";" && peek().value != "begin") {
+                if (identifiers.size() == 0) { 
+                    while (!isAtEnd() && peek().value != ";" && peek().value != "begin") { // si no se encontraron identificadores salta hasta el siguiente ; o el inicio del bloque
                         get();
                     }
                     if (peek().value == ";") get();
@@ -299,7 +299,7 @@ void Parser::declarations() {
                 
                 expect(":");
                 
-                if (!isAtEnd()) {
+                if (!isAtEnd()) { // si no es el final del bloque, espera un tipo de dato valido
                     Token tipo = peek();
                     
                     if (tipo.type == TokenType::Unknown) {
@@ -310,19 +310,19 @@ void Parser::declarations() {
                         get();
                     } else {
                         get();
-                        cout << "  ";
-                        for (size_t i = 0; i < identifiers.size(); i++) {
+                        cout << "  ";  // muestra los identificadores declarados con su tipo
+                        for (size_t i = 0; i < identifiers.size(); i++) { 
                             if (i > 0) cout << ", ";
                             cout << identifiers.get(i);
                         }
-                        cout << " : " << tipo.value << endl;
+                        cout << " : " << tipo.value << endl; 
                     }
                 }
                 
                 expectSemicolon();
             }
-            
-        } else if (peek().value == "procedure" || peek().value == "function") {
+         //si es una declaracion de procedimiento o funcion, espera tipo, nombre, parametros y bloque
+        } else if (peek().value == "procedure" || peek().value == "function") { 
             string tipo = peek().value;
             get();
             Token nombre = expectIdentifier();
@@ -350,7 +350,7 @@ void Parser::declarations() {
     }
 }
 
-void Parser::statement() {
+void Parser::statement() { // maneja instrucciones tipo if, while, si no es ninguna de esas, asume que es una asignacion o llamada a procedimiento
     setContext("sentencia");
     
     if (isAtEnd()) return;
@@ -362,28 +362,122 @@ void Parser::statement() {
         return;
     }
     
-    if (peek().value == ";") {
+    if (peek().value == ";") { //si encuentra un ; sin nada antes lo ignora y sigue buscando la siguiente sentencia
         get();
         return;
     }
     
     if (peek().value == "begin") {
         get();
-        while (!isAtEnd() && peek().value != "end") {
+        while (!isAtEnd() && peek().value != "end") { //si encuentra un token desconocido dentro del bloque error y sigue buscando una sentencia valida
             if (peek().type == TokenType::Unknown) {
                 Token t = get();
                 error("Token desconocido dentro de bloque: '" + t.value + "'");
                 continue;
             }
-            statement();
+            statement(); 
         }
         expect("end");
         if (peek().value == ";") get();
         return;
     }
-    
-    if (peek().type == TokenType::Identifier) {
-        assignmentOrCall();
+
+    if (peek().value == "if") {
+        get(); // consume 'if'
+
+        ArrayList<Token> condition;
+        while (!isAtEnd() && peek().value != "then") {
+            if (peek().type == TokenType::Unknown) {
+                Token t = get();
+                error("Token desconocido en condicion: '" + t.value + "'");
+            } else {
+                condition.add(get());
+            }
+        }
+
+        if (peek().value == "then") {
+            get();
+        } else {
+            error("Se esperaba 'then' en la sentencia if");
+        }
+
+        if (condition.size() > 0) {
+            try {
+                ExpressionParser exprParser(condition);
+                ExprNode* exprTree = exprParser.parse();
+            } catch (...) {
+                error("Error en la expresion de condicion del if");
+            }
+        }
+
+        statement(); // then
+
+        if (peek().value == "else") {
+            get();
+            statement(); // else
+        }
+        return;
+    }
+
+    if (peek().value == "while") {
+        get(); // 'while'
+
+        ArrayList<Token> condition;
+        while (!isAtEnd() && peek().value != "do") {
+            if (peek().type == TokenType::Unknown) {
+                Token t = get();
+                error("Token desconocido en condicion: '" + t.value + "'");
+            } else {
+                condition.add(get());
+            }
+        }
+
+        if (peek().value == "do") {
+            get();
+        } else {
+            error("Se esperaba 'do' en la sentencia while");
+        }
+
+        if (condition.size() > 0) {
+            try {
+                ExpressionParser exprParser(condition);
+                ExprNode* exprTree = exprParser.parse();
+            } catch (...) {
+                error("Error en la expresion de condicion del while");
+            }
+        }
+
+        statement();
+        return;
+    }
+
+    if (peek().value == "writeln" || peek().value == "readln") {
+        string procName = peek().value;
+        get(); // consume writeln/readln
+
+        expect("(");
+        while (!isAtEnd() && peek().value != ")") {
+            if (peek().type == TokenType::Unknown) {
+                Token t = get();
+                error("Token desconocido en parametros: '" + t.value + "'");
+            } else {
+                get();
+            }
+            if (peek().value == ",") get();
+        }
+
+        if (peek().value == ")") {
+            get();
+        } else {
+            error("Se esperaba ')' en llamada a " + procName);
+        }
+
+        expectSemicolon();
+        return;
+    }
+
+    if (peek().type == TokenType::Identifier) { 
+        assignmentOrCall();// si es un identificador,puede ser una asignacion o una llamada a procedimiento
         return;
     }
     
@@ -392,10 +486,11 @@ void Parser::statement() {
     recoverTo(";");
 }
 
-void Parser::assignmentOrCall() {
+
+void Parser::assignmentOrCall() { 
     Token ident = get();
     
-    if (peek().value == ":=") {
+    if (peek().value == ":=") { //si despues del identificador viene un := es una asignacion
         get();
         cout << "Asignacion a: " << ident.value << endl;
         
@@ -409,7 +504,7 @@ void Parser::assignmentOrCall() {
             }
         }
         
-        if (expression.size() > 0) {
+        if (expression.size() > 0) {// si se encontro una expresion valida, se intenta parsear la expresion para detectar errores dentro de la expresion
             try {
                 ExpressionParser exprParser(expression);
                 ExprNode* exprTree = exprParser.parse();
@@ -420,9 +515,15 @@ void Parser::assignmentOrCall() {
         
         expectSemicolon();
         
-    } else if (peek().value == "(") {
+    } else if (peek().value == "(") { //si viene un ( es una llamada a procedimiento, sino error
         get();
-        cout << "Llamada a: " << ident.value << endl;
+
+        // Validar que sea una llamada a un procedimiento permitido (por ahora solo writeln/readln)
+        if (ident.value != "writeln" && ident.value != "readln") {
+            error("Procedimiento no declarado: '" + ident.value + "'");
+        }
+
+        cout << "Llamada a: " << ident.value << endl; // muestra el nombre del procedimiento llamado
         
         while (!isAtEnd() && peek().value != ")") {
             if (peek().type == TokenType::Unknown) {
@@ -443,7 +544,7 @@ void Parser::assignmentOrCall() {
         expectSemicolon();
         
     } else {
-        error("Identificador '" + ident.value + "' no esperado en este contexto");
+        error("Identificador '" + ident.value + "' no esperado en este contexto"); // si no es ni asignacion ni llamada a procedimiento, da error
         recoverTo(";");
     }
 }

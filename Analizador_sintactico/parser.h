@@ -8,7 +8,7 @@
 
 using namespace std;
 
-class ExprNode;
+class ExprNode; // ya las clases estan definidas
 class ExpressionParser;
 
 struct SyntaxError {
@@ -23,15 +23,15 @@ class Parser
 {
 public:
     Parser(const ArrayList<Token> &tokens);
-    void parse();
+    void parse(); // metodo que inicia el analisis sintactico
     bool hasSyntaxError = false;
-    ArrayList<SyntaxError> getErrors() const { return errors; }
+    ArrayList<SyntaxError> getErrors() const { return errors; } // devuelve los errores encontrados 
 
 private:
-    const ArrayList<Token> &tokens;
+    const ArrayList<Token> &tokens; // lista de tokens para analizar
     size_t pos = 0;
-    ArrayList<SyntaxError> errors;
-    string currentContext;
+    ArrayList<SyntaxError> errors; // lista de errores encontrados durante el analisis
+    string currentContext; // parte del codigo 
 
     Token peek();
     Token get();
@@ -42,10 +42,10 @@ private:
     void setContext(const string& context);
     
     void program();
-    void block();
-    void declarations();
-    void statement();
-    void assignmentOrCall();
+    void block(); // maneja bloques de codigo 
+    void declarations(); // se analizan las variables declaradas
+    void statement(); //para instrucciones tipo if, while, etc
+    void assignmentOrCall(); // para saber si es una asignacion o funcion
     
     Token expectIdentifier();
     void expect(const string &value);
