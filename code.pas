@@ -1,26 +1,15 @@
-program ProgramaValido;
+program PruebaSuma;
 var
-   contador, limite, total : integer;
-   nombre : string;
+   a, b, c, total: integer;
 begin
-   contador := 0;
-   limite := 5;
-   total := 0;
-   nombre := 'Gaby';
+   a := 10;
+   b := 25;
+   c := 5;
 
-   while contador < limite do
-   begin
-      total := total + contador;
-      contador := contador + 1;
-   end;
+   total := a + b + e;
 
-   if total > 0 then
-   begin
-      writeln(nombre);
-      writeln(total);
-   end
-   else
-   begin
-      writeln('Sin datos');
-   end;
+   writeln(a);
+   writeln(b);
+   writeln(c);
+   writeln(total);
 end.

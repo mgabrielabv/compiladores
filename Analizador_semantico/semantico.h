@@ -44,4 +44,4 @@ private:
     size_t getExpressionRange(size_t start, size_t maxEnd) const;
 };
 
-#endif // SEMANTIC_ANALYZER_H
+#endif 

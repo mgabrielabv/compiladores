@@ -2,6 +2,7 @@
 #include "../analizadorlexico/lexer.h"
 #include "../Analizador_De_Expresiones/expression_parser.h"
 #include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -41,6 +42,10 @@ void Parser::setContext(const string& context) {
 }
 
 void Parser::error(const string& message) { // Cuando se encuentra un error, marca, guarda y dice el tipo de error
+    if (hasSyntaxError) {
+        return;
+    }
+
     hasSyntaxError = true;
     Token current = peek();
     SyntaxError err;
@@ -50,12 +55,8 @@ void Parser::error(const string& message) { // Cuando se encuentra un error, mar
     err.token = current.value;
     err.context = currentContext;
     errors.add(err);
-    
-        cerr << "Error sintactico en linea " << current.line 
-            << ", columna " << current.column << ": " << message << endl;
-    if (!currentContext.empty()) {
-        cerr << "  Contexto: " << currentContext << endl;
-    }
+
+    throw runtime_error("SYNTAX_ABORT");
 }
 
 void Parser::recoverTo(const string& delimiter) { //salta tokens hasta ver un ; o un end
@@ -153,37 +154,22 @@ void Parser::expectEnd() {
 }
 
 void Parser::parse() {
-    cout << "Iniciando analisis sintactico...\n";
-    
     try {
         program();
-    } catch (const exception &e) {
-        error(string("Error fatal: ") + e.what());
-    }
-    
-    if (!isAtEnd() && peek().type != TokenType::EndOfFile) {
-        setContext("final del analisis");
-        error("Tokens no procesados al final del archivo");
-    }
-    
-    if (hasSyntaxError) {
-        cout << "\n=========================================\n";
-        cout << "Se encontraron " << errors.size() << " errores sintacticos:\n";
-        cout << "=========================================\n";
-        
-        for (size_t i = 0; i < errors.size(); i++) {
-            SyntaxError err = errors.get(i);
-            cout << "Error " << (i+1) << ":\n";
-            cout << "  Linea: " << err.line << ", Columna: " << err.column << "\n";
-            cout << "  Token: '" << err.token << "'\n";
-            cout << "  Mensaje: " << err.message << "\n";
-            if (!err.context.empty()) {
-                cout << "  Contexto: " << err.context << "\n";
-            }
-            cout << "\n";
+        if (!isAtEnd() && peek().type != TokenType::EndOfFile) {
+            setContext("final del analisis");
+            error("Tokens no procesados al final del archivo");
         }
+    } catch (const runtime_error &e) {
+        if (string(e.what()) != "SYNTAX_ABORT") {
+            throw;
+        }
+    }
+
+    if (hasSyntaxError) {
+        cout << "hay un error sintactico\n";
     } else {
-        cout << "\nAnalisis sintactico completado: SIN ERRORES\n";
+        cout << "Analisis sintactico completado: SIN ERRORES\n";
     }
 }
 

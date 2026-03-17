@@ -241,14 +241,11 @@ void ExpressionEvaluator::ejecutarAsignacion(ExprNode *n) {
     }
     
     string nombreVar = n->izquierdo->valor;
-    cout << "Evaluando expresion para asignar a '" << nombreVar << "'..." << endl;
     double valor = evaluarNodo(n->derecho);
     variables[nombreVar] = valor;
-    cout << "  " << nombreVar << " = " << valor << " (asignado)" << endl;
 }
 
 double ExpressionEvaluator::evaluar(ExprNode *n) {
-    cout << "Evaluando expresion..." << endl;
     return evaluarNodo(n);
 }
 

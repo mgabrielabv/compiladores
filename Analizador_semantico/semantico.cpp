@@ -12,7 +12,13 @@ void SemanticAnalyzer::analyze()
     errors = ArrayList<SemanticError>();
 
     checkVariableDeclaration();
+    if (errors.size() != 0)
+        return;
+
     checkTypes();
+    if (errors.size() != 0)
+        return;
+
     checkControlStructures();
 }
 
@@ -120,6 +126,11 @@ void SemanticAnalyzer::checkVariableDeclaration()
             varType = "String";
         else if (varType == "boolean")
             varType = "bool";
+        else
+        {
+            errors.add({tokens[j].line, tokens[j].column, "Tipo de dato no soportado: " + tokens[j].value});
+            return;
+        }
 
         for (size_t n = 0; n < names.size(); ++n)
         {
@@ -127,6 +138,7 @@ void SemanticAnalyzer::checkVariableDeclaration()
             if (symbolTable.count(name))
             {
                 errors.add({tokens[i].line, tokens[i].column, "Variable redeclarada: " + name});
+                return;
             }
             else
             {
@@ -244,6 +256,31 @@ string SemanticAnalyzer::getExpressionTypeForAssignment(size_t start, size_t end
                 errorMsg = "Comparacion invalida entre " + currentType + " y " + rhsType;
                 return "";
             }
+
+            bool leftNumeric = (currentType == "i32" || currentType == "f64");
+            bool rightNumeric = (rhsType == "i32" || rhsType == "f64");
+            bool sameType = (currentType == rhsType);
+
+            bool isEqualityOp = (op.value == "==" || op.value == "!=");
+            bool comparable = false;
+
+            if (isEqualityOp)
+            {
+                comparable = sameType || (leftNumeric && rightNumeric);
+            }
+            else
+            {
+                comparable = leftNumeric && rightNumeric;
+            }
+
+            if (!comparable)
+            {
+                errorLine = op.line;
+                errorCol = op.column;
+                errorMsg = "Comparacion invalida con operador '" + op.value + "' entre " + currentType + " y " + rhsType;
+                return "";
+            }
+
             currentType = "bool";
         }
         else if (op.value == "&&" || op.value == "||")
@@ -279,7 +316,7 @@ void SemanticAnalyzer::checkTypes()
         if (it == symbolTable.end())
         {
             errors.add({tokens[i].line, tokens[i].column, "Variable no declarada: " + varName});
-            continue;
+            return;
         }
 
         size_t exprStart = i + 2;
@@ -291,7 +328,7 @@ void SemanticAnalyzer::checkTypes()
         if (!errMsg.empty())
         {
             errors.add({errLine, errCol, errMsg});
-            continue;
+            return;
         }
 
         const string &varType = it->second.type;
@@ -300,20 +337,21 @@ void SemanticAnalyzer::checkTypes()
         if (varType == "i32" && exprType == "String")
         {
             errors.add({tokens[exprStart].line, tokens[exprStart].column, "No se puede asignar un string a un entero"});
-            continue;
+            return;
         }
 
         // Regla 3: integer no acepta decimal
         if (varType == "i32" && exprType == "f64")
         {
             errors.add({tokens[exprStart].line, tokens[exprStart].column, "No se puede asignar un decimal a un entero"});
-            continue;
+            return;
         }
 
         if (!exprType.empty() && exprType != varType)
         {
             errors.add({tokens[exprStart].line, tokens[exprStart].column,
                         "Tipo incompatible en asignacion a '" + varName + "': se esperaba '" + varType + "', pero se obtuvo '" + exprType + "'"});
+            return;
         }
     }
 }
@@ -343,13 +381,14 @@ void SemanticAnalyzer::checkControlStructures()
         if (!errMsg.empty())
         {
             errors.add({errLine, errCol, errMsg});
-            continue;
+            return;
         }
 
         if (!condType.empty() && condType != "bool")
         {
             errors.add({tokens[condStart].line, tokens[condStart].column,
                         "La condicion del " + tokens[i].value + " debe ser una expresion booleana"});
+            return;
         }
     }
 }

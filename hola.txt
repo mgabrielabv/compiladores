@@ -1,0 +1,1 @@
+Set-Location "c:\Users\gaby's\OneDrive\Documents\Compiladores\Proyectos compiladores\Analizador_semantico"; g++ -std=c++11 main.cpp semantico.cpp ..\Analizador_sintactico\parser.cpp ..\analizadorlexico\lexer.cpp ..\Analizador_De_Expresiones\expression_parser.cpp -o analizador_semantico.exe
