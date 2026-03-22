@@ -1,0 +1,20 @@
+@subsystem
+	path: ./output/
+	name: operaciones
+	class: Basic Operation
+	public:
+		sum (int x, int y): int ;
+		Resta (int x, int y): int;
+	class: factorial
+		public:
+			fact (int num): int;
+@subsystem
+	path: ./output/
+	name: seguridad
+	class: Auth
+	private:
+		validate (string token): boolean;
+	protected:
+		encrypt (string data): string;
+	public:
+		login (): void;
